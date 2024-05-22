@@ -35,13 +35,13 @@ export const options = {
     duration: 200,
 };
 
-export default function() {
+export default async function() {
     // Request the IP address of k6.io from the selected namerserver A records.
-    const resolvedIP = dns.resolve('k6.io', 'A', {nameserver: '192.168.2.100:53'});
+    const resolvedIP = await dns.resolve('k6.io', 'A', {nameserver: '192.168.2.100:53'});
     console.log(`k6.io IPs as resolved against the 192.168.2.100 nameserver: ${resolvedIP}`);
     
     // Lookup the IP address of k6.io using the system's default DNS server.
-    const lookupIP = dns.lookup('k6.io');
+    const lookupIP = await dns.lookup('k6.io');
     console.log(`k6.io IP as looked up by the system's default DNS server: ${lookupIP}`);
 }
 ```
