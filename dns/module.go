@@ -2,10 +2,8 @@ package dns
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"net"
-	"strconv"
-	"strings"
 	"time"
 
 	"go.k6.io/k6/js/common"
@@ -43,7 +41,7 @@ func New() *RootModule {
 func (rm *RootModule) NewModuleInstance(vu modules.VU) modules.Instance {
 	instanceMetrics, err := registerMetrics(metrics.NewRegistry())
 	if err != nil {
-		common.Throw(vu.Runtime(), fmt.Errorf("failed to register instanceMetrics; reason: %w", err))
+		common.Throw(vu.Runtime(), fmt.Errorf("failed to register dns module instance's metrics; reason: %w", err))
 	}
 
 	return &ModuleInstance{
@@ -62,11 +60,12 @@ func (mi *ModuleInstance) Exports() modules.Exports {
 }
 
 // Resolve resolves a domain name to an IP address.
-func (mi *ModuleInstance) Resolve(query, recordType sobek.Value, resolveDNSOptions *sobek.Object) *sobek.Promise {
+// func (mi *ModuleInstance) Resolve(query, recordType sobek.Value, resolveDNSOptions *sobek.Object) *sobek.Promise {
+func (mi *ModuleInstance) Resolve(query, recordType, nameserverAddr sobek.Value) *sobek.Promise {
 	promise, resolve, reject := promises.New(mi.vu)
 
 	if mi.vu.State() == nil {
-		reject(fmt.Errorf("resolve can not be used in the init context"))
+		reject(errors.New("resolve can not be used in the init context"))
 		return promise
 	}
 
@@ -82,20 +81,19 @@ func (mi *ModuleInstance) Resolve(query, recordType sobek.Value, resolveDNSOptio
 		return promise
 	}
 
-	options, err := newResolveOptionsFrom(mi.vu.Runtime(), resolveDNSOptions)
-	if err != nil {
-		reject(err)
+	var nameserverAddrStr string
+	if err := mi.vu.Runtime().ExportTo(nameserverAddr, &nameserverAddrStr); err != nil {
+		reject(fmt.Errorf("nameserver must be a string; got %v instead", nameserverAddr))
 		return promise
 	}
 
 	// nameserver := NewNameserver(options.Nameserver.IP, options.Nameserver.Port)
-	nameserver, err := options.ParseNameserver()
+	nameserver, err := ParseNameserverAddr(nameserverAddrStr)
 	if err != nil {
 		reject(err)
 		return promise
 	}
 
-	// FIXME: do we want to support no namerservers provided, and use the default system lookup instead?
 	go func() {
 		resolutionStartTime := time.Now()
 		fetchedIPs, resolveErr := mi.dnsClient.Resolve(mi.vu.Context(), queryStr, recordTypeStr, nameserver)
@@ -157,50 +155,35 @@ func (mi *ModuleInstance) Lookup(hostname sobek.Value) *sobek.Promise {
 	return promise
 }
 
-// ResolveOptions holds the options for the resolve function.
-type resolveOptions struct {
-	// Nameservers holds the list of DNS servers to use
-	Nameserver string `js:"nameserver"`
-}
-
-// newResolveOptionsFrom creates a new ResolveOptions from a JS object.
-func newResolveOptionsFrom(rt *sobek.Runtime, obj *sobek.Object) (*resolveOptions, error) {
-	options := resolveOptions{}
-
-	if err := rt.ExportTo(obj, &options); err != nil {
-		return nil, fmt.Errorf("options must be a ResolveOptions object")
-	}
-
-	return &options, nil
-}
-
-func (ro *resolveOptions) ParseNameserver() (Nameserver, error) {
-	var hostStr string
-	portStr := "53"
+// registerMetrics registers the metrics for the module instance.
+func registerMetrics(registry *metrics.Registry) (*moduleInstanceMetrics, error) {
 	var err error
+	m := &moduleInstanceMetrics{}
 
-	// If a port was explicitly provided, let's extract and use it.
-	if strings.ContainsRune(ro.Nameserver, ':') {
-		// Split the host and the port from the nameserver string
-		hostStr, portStr, err = net.SplitHostPort(ro.Nameserver)
-		if err != nil {
-			return Nameserver{}, fmt.Errorf("invalid nameserver address: %w", err)
-		}
-	} else {
-		// Otherwise treat the options nameserver string as the host and use the default DNS port 53.
-		hostStr = ro.Nameserver
-	}
-
-	// Convert the port to an integer
-	port, err := strconv.Atoi(portStr)
+	m.DNSResolutions, err = registry.NewMetric("dns_resolutions", metrics.Counter)
 	if err != nil {
-		return Nameserver{}, fmt.Errorf("invalid port: %w", err)
+		return nil, err
 	}
 
-	return NewNameserver(net.ParseIP(hostStr), uint16(port)), nil
+	m.DNSResolutionDuration, err = registry.NewMetric("dns_resolution_duration", metrics.Trend, metrics.Time)
+	if err != nil {
+		return nil, err
+	}
+
+	m.DNSLookups, err = registry.NewMetric("dns_lookups", metrics.Counter)
+	if err != nil {
+		return nil, err
+	}
+
+	m.DNSLookupDuration, err = registry.NewMetric("dns_lookup_duration", metrics.Trend, metrics.Time)
+	if err != nil {
+		return nil, err
+	}
+
+	return m, nil
 }
 
-// emitResolutionMetrics emits the metrics for a websocket connection.
+// emitResolutionMetrics emits the metrics specific to DNS resolution operations.
 func (mi *ModuleInstance) emitResolutionMetrics(
 	ctx context.Context,
 	duration int64,
@@ -240,7 +223,7 @@ func (mi *ModuleInstance) emitResolutionMetrics(
 	})
 }
 
-// emitLookupMetrics emits the metrics for a websocket connection.
+// emitLookupMetrics emits the metrics specific to DNS lookup operations.
 func (mi *ModuleInstance) emitLookupMetrics(
 	ctx context.Context,
 	duration int64,
@@ -276,6 +259,7 @@ func (mi *ModuleInstance) emitLookupMetrics(
 	})
 }
 
+// moduleInstanceMetrics holds the metrics for the module instance.
 type moduleInstanceMetrics struct {
 	// DNSResolutions is a counter metric that counts the number of DNS resolutions.
 	DNSResolutions *metrics.Metric
@@ -288,31 +272,4 @@ type moduleInstanceMetrics struct {
 
 	// DNSLookupDuration is a trend metric that measures the duration of DNS lookups.
 	DNSLookupDuration *metrics.Metric
-}
-
-func registerMetrics(registry *metrics.Registry) (*moduleInstanceMetrics, error) {
-	var err error
-	m := &moduleInstanceMetrics{}
-
-	m.DNSResolutions, err = registry.NewMetric("dns_resolutions", metrics.Counter)
-	if err != nil {
-		return nil, err
-	}
-
-	m.DNSResolutionDuration, err = registry.NewMetric("dns_resolution_duration", metrics.Trend, metrics.Time)
-	if err != nil {
-		return nil, err
-	}
-
-	m.DNSLookups, err = registry.NewMetric("dns_lookups", metrics.Counter)
-	if err != nil {
-		return nil, err
-	}
-
-	m.DNSLookupDuration, err = registry.NewMetric("dns_lookup_duration", metrics.Trend, metrics.Time)
-	if err != nil {
-		return nil, err
-	}
-
-	return m, nil
 }

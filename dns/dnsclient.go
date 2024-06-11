@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"strconv"
 
 	"github.com/miekg/dns"
 )
@@ -56,27 +55,19 @@ func (r *Client) Resolve(
 	query, recordType string,
 	nameserver Nameserver,
 ) ([]string, error) {
-	rt, err := RecordTypeString(recordType)
+	concreteType, err := RecordTypeString(recordType)
 	if err != nil {
 		return nil, fmt.Errorf("invalid record type: %w", err)
 	}
 
+	// Prepare the DNS query message
+	//
 	// Because the dns package [dns.SetQuestion] function expects specific
 	// uint16 values for the record type, and we don't want to leak that
 	// to our public API, we need to convert our RecordType to the
 	// corresponding uint16 value.
-	// TODO: could we get the enumer generator to do that instead?
-	var concreteType uint16
-	switch rt {
-	case RecordTypeA:
-		concreteType = dns.TypeA
-	case RecordTypeAAAA:
-		concreteType = dns.TypeAAAA
-	}
-
-	// Prepare the DNS query message
 	message := dns.Msg{}
-	message.SetQuestion(query+".", concreteType)
+	message.SetQuestion(query+".", uint16(concreteType))
 
 	// Query the nameserver
 	response, _, err := r.client.ExchangeContext(ctx, &message, nameserver.Addr())
@@ -91,12 +82,6 @@ func (r *Client) Resolve(
 			ips = append(ips, t.A.String())
 		case *dns.AAAA:
 			ips = append(ips, t.AAAA.String())
-		case *dns.CNAME:
-			ips = append(ips, t.Target)
-		case *dns.NS:
-			ips = append(ips, t.Ns)
-		case *dns.PTR:
-			ips = append(ips, t.Ptr)
 		default:
 			return nil, fmt.Errorf("unhandled DNS answer type %T", a)
 		}
@@ -114,26 +99,4 @@ func (r *Client) Lookup(ctx context.Context, hostname string) ([]string, error) 
 	}
 
 	return ips, nil
-}
-
-// Nameserver represents a DNS nameserver.
-type Nameserver struct {
-	// IPAddr is the IP address of the nameserver.
-	IP net.IP
-
-	// Port is the port of the nameserver.
-	Port uint16
-}
-
-// Addr returns the address of the nameserver as a string.
-func (n Nameserver) Addr() string {
-	return n.IP.String() + ":" + strconv.Itoa(int(n.Port))
-}
-
-// NewNameserver creates a new Nameserver with the given IP address and port.
-func NewNameserver(ip net.IP, port uint16) Nameserver {
-	return Nameserver{
-		IP:   ip,
-		Port: port,
-	}
 }

@@ -7,43 +7,31 @@ import (
 )
 
 const (
-	_RecordTypeName_0 = "ANS"
-	_RecordTypeName_1 = "CNAME"
-	_RecordTypeName_2 = "PTR"
-	_RecordTypeName_3 = "AAAA"
+	_RecordTypeName_0 = "A"
+	_RecordTypeName_1 = "AAAA"
 )
 
 var (
-	_RecordTypeIndex_0 = [...]uint8{0, 1, 3}
-	_RecordTypeIndex_1 = [...]uint8{0, 5}
-	_RecordTypeIndex_2 = [...]uint8{0, 3}
-	_RecordTypeIndex_3 = [...]uint8{0, 4}
+	_RecordTypeIndex_0 = [...]uint8{0, 1}
+	_RecordTypeIndex_1 = [...]uint8{0, 4}
 )
 
 func (i RecordType) String() string {
 	switch {
-	case 1 <= i && i <= 2:
-		i -= 1
-		return _RecordTypeName_0[_RecordTypeIndex_0[i]:_RecordTypeIndex_0[i+1]]
-	case i == 5:
-		return _RecordTypeName_1
-	case i == 12:
-		return _RecordTypeName_2
+	case i == 1:
+		return _RecordTypeName_0
 	case i == 28:
-		return _RecordTypeName_3
+		return _RecordTypeName_1
 	default:
 		return fmt.Sprintf("RecordType(%d)", i)
 	}
 }
 
-var _RecordTypeValues = []RecordType{1, 2, 5, 12, 28}
+var _RecordTypeValues = []RecordType{1, 28}
 
 var _RecordTypeNameToValueMap = map[string]RecordType{
 	_RecordTypeName_0[0:1]: 1,
-	_RecordTypeName_0[1:3]: 2,
-	_RecordTypeName_1[0:5]: 5,
-	_RecordTypeName_2[0:3]: 12,
-	_RecordTypeName_3[0:4]: 28,
+	_RecordTypeName_1[0:4]: 28,
 }
 
 // RecordTypeString retrieves an enum value from the enum constants string name.

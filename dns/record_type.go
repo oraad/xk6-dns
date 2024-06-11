@@ -1,5 +1,7 @@
 package dns
 
+import "github.com/miekg/dns"
+
 // RecordType represents a DNS record type.
 //
 // It is a string type with a restricted set of values.
@@ -24,7 +26,10 @@ type RecordType uint16
 
 // Note that we aligned the values of the RecordType enum values with the
 // corresponding values of the dns package's types for convenience.
+//
+// Note that the RecordType enum values are explicitly typed to allow enumer
+// to detect them.
 const (
-	RecordTypeA    RecordType = 1
-	RecordTypeAAAA RecordType = 28
+	RecordTypeA    RecordType = RecordType(dns.TypeA)
+	RecordTypeAAAA RecordType = RecordType(dns.TypeAAAA)
 )

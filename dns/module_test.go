@@ -69,7 +69,7 @@ func TestClient_Resolve(t *testing.T) {
 		require.NoError(t, err)
 
 		_, err = runtime.RunOnEventLoop(wrapInAsyncLambda(`
-			await dns.resolve("k6.io", "A", { nameserver: "1.1.1.1:53" });
+			await dns.resolve("k6.io", "A", "1.1.1.1:53");
 		`))
 
 		assert.Error(t, err)
@@ -89,7 +89,7 @@ func TestClient_Resolve(t *testing.T) {
 		})
 
 		_, err = runtime.RunOnEventLoop(wrapInAsyncLambda(`
-			const resolveResults = await dns.resolve("k6.io", "A", { nameserver: "1.1.1.1:53" });
+			const resolveResults = await dns.resolve("k6.io", "A", "1.1.1.1:53");
 		
 			if (resolveResults.length === 0) {
 				throw "Resolving k6.io against cloudflare CDN returned no results, expected at least one IP"
@@ -124,7 +124,7 @@ func TestClient_Resolve(t *testing.T) {
 			const resolveResults = await dns.resolve(
 				"` + testDomain + `",
 				"` + RecordTypeA.String() + `",
-				{ nameserver: "127.0.0.1:` + strconv.Itoa(mappedPort.Int()) + `"}
+				"127.0.0.1:` + strconv.Itoa(mappedPort.Int()) + `"
 			);
 		
 			if (resolveResults.length === 0) {
@@ -178,7 +178,7 @@ func TestClient_Resolve(t *testing.T) {
 			const resolvedResults = await dns.resolve(
 				"missing.domain",
 				"` + RecordTypeA.String() + `",
-				{ nameserver: "127.0.0.1:` + strconv.Itoa(mappedPort.Int()) + `" }
+				"127.0.0.1:` + strconv.Itoa(mappedPort.Int()) + `"
 			);
 		
 			if (resolvedResults.length !== 0) {
@@ -215,7 +215,7 @@ func TestClient_Resolve(t *testing.T) {
 			const resolveResults = await dns.resolve(
 				"` + testDomain + `",
 				"` + RecordTypeAAAA.String() + `",
-				{ nameserver: "127.0.0.1:` + strconv.Itoa(mappedPort.Int()) + `"}
+				"127.0.0.1:` + strconv.Itoa(mappedPort.Int()) + `"
 			);
 		
 			// We sort the results to ensure that the order is consistent
@@ -268,7 +268,7 @@ func TestClient_Resolve(t *testing.T) {
 			const resolvedResults = await dns.resolve(
 				"missing.domain",
 				"` + RecordTypeAAAA.String() + `",
-				{ nameserver: "127.0.0.1:` + strconv.Itoa(mappedPort.Int()) + `" }
+				"127.0.0.1:` + strconv.Itoa(mappedPort.Int()) + `"
 			);
 		
 			if (resolvedResults.length !== 0) {
