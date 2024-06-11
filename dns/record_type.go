@@ -5,13 +5,9 @@ package dns
 // It is a string type with a restricted set of values.
 // The values are the DNS record types supported by the module.
 //
-// The values are:
+// The currently supported values are:
 // - A
 // - AAAA
-// - ANAME
-// - CNAME
-// - NS
-// - PTR
 //
 // The supported values are the ones that are most likely to be
 // used by the users of this extension and package, as they are
@@ -29,9 +25,6 @@ type RecordType uint16
 // Note that we aligned the values of the RecordType enum values with the
 // corresponding values of the dns package's types for convenience.
 const (
-	RecordTypeA     RecordType = 1
-	RecordTypeAAAA             = 28
-	RecordTypeCNAME            = 5
-	RecordTypeNS               = 2
-	RecordTypePTR              = 12
+	RecordTypeA    RecordType = 1
+	RecordTypeAAAA RecordType = 28
 )

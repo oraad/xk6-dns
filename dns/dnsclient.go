@@ -28,10 +28,9 @@ type Lookuper interface {
 	Lookup(ctx context.Context, hostname string) ([]string, error)
 }
 
-// Client is a DNS resolver that uses the miekg/dns package under the hood.
+// Client is a DNS resolver that uses the `miekg/dns` package under the hood.
 //
 // It implements the Resolver interface.
-// FIXME: we would likely want to use k6's Dialer here instead of the default
 type Client struct {
 	// client is the DNS client used to resolve queries.
 	client dns.Client
@@ -73,12 +72,6 @@ func (r *Client) Resolve(
 		concreteType = dns.TypeA
 	case RecordTypeAAAA:
 		concreteType = dns.TypeAAAA
-	case RecordTypeCNAME:
-		concreteType = dns.TypeCNAME
-	case RecordTypeNS:
-		concreteType = dns.TypeNS
-	case RecordTypePTR:
-		concreteType = dns.TypePTR
 	}
 
 	// Prepare the DNS query message
@@ -91,7 +84,7 @@ func (r *Client) Resolve(
 		return nil, err
 	}
 
-	var ips []string //nolint:prealloc
+	var ips []string
 	for _, a := range response.Answer {
 		switch t := a.(type) {
 		case *dns.A:
@@ -119,8 +112,6 @@ func (r *Client) Lookup(ctx context.Context, hostname string) ([]string, error) 
 	if err != nil {
 		return nil, err
 	}
-
-	// TODO: needs to emit a metric
 
 	return ips, nil
 }
