@@ -8,11 +8,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dop251/goja"
 	"go.k6.io/k6/js/common"
 	"go.k6.io/k6/js/modules"
 	"go.k6.io/k6/js/promises"
 	"go.k6.io/k6/metrics"
+
+	"github.com/grafana/sobek"
 )
 
 type (
@@ -61,7 +62,7 @@ func (mi *ModuleInstance) Exports() modules.Exports {
 }
 
 // Resolve resolves a domain name to an IP address.
-func (mi *ModuleInstance) Resolve(query, recordType goja.Value, resolveDNSOptions *goja.Object) *goja.Promise {
+func (mi *ModuleInstance) Resolve(query, recordType sobek.Value, resolveDNSOptions *sobek.Object) *sobek.Promise {
 	promise, resolve, reject := promises.New(mi.vu)
 
 	if mi.vu.State() == nil {
@@ -120,7 +121,7 @@ func (mi *ModuleInstance) Resolve(query, recordType goja.Value, resolveDNSOption
 }
 
 // Lookup resolves a domain name to an IP address using the default system nameservers.
-func (mi *ModuleInstance) Lookup(hostname goja.Value) *goja.Promise {
+func (mi *ModuleInstance) Lookup(hostname sobek.Value) *sobek.Promise {
 	promise, resolve, reject := promises.New(mi.vu)
 
 	if mi.vu.State() == nil {
@@ -163,7 +164,7 @@ type resolveOptions struct {
 }
 
 // newResolveOptionsFrom creates a new ResolveOptions from a JS object.
-func newResolveOptionsFrom(rt *goja.Runtime, obj *goja.Object) (*resolveOptions, error) {
+func newResolveOptionsFrom(rt *sobek.Runtime, obj *sobek.Object) (*resolveOptions, error) {
 	options := resolveOptions{}
 
 	if err := rt.ExportTo(obj, &options); err != nil {
