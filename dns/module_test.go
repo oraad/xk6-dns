@@ -175,15 +175,22 @@ func TestClient_Resolve(t *testing.T) {
 		})
 
 		testScript := `
-			const resolvedResults = await dns.resolve(
-				"missing.domain",
-				"` + RecordTypeA.String() + `",
-				"127.0.0.1:` + strconv.Itoa(mappedPort.Int()) + `"
-			);
+			try {
+				const resolvedResults = await dns.resolve(
+					"missing.domain",
+					"` + RecordTypeA.String() + `",
+					"127.0.0.1:` + strconv.Itoa(mappedPort.Int()) + `"
+				);
+			} catch (err) {
+				if (err.name !== "NonExistingDomain") {
+					throw "Resolving missing.domain against unbound server test container returned unexpected error, expected NonExistingDomain, got: " + err.Name
+				}
 		
-			if (resolvedResults.length !== 0) {
-				throw "Resolving missing.domain against unbound server test container returned unexpected results, expected 0 ips, got:" + resolvedResults.length
+				// We expected this error, so we can return
+				return
 			}
+		
+			throw "Resolving missing.domain against unbound server test container should have thrown an error, but it didn't"
 		`
 
 		_, err = runtime.RunOnEventLoop(wrapInAsyncLambda(testScript))
@@ -265,15 +272,22 @@ func TestClient_Resolve(t *testing.T) {
 		})
 
 		testScript := `
-			const resolvedResults = await dns.resolve(
-				"missing.domain",
-				"` + RecordTypeAAAA.String() + `",
-				"127.0.0.1:` + strconv.Itoa(mappedPort.Int()) + `"
-			);
+			try {
+				const resolvedResults = await dns.resolve(
+					"missing.domain",
+					"` + RecordTypeAAAA.String() + `",
+					"127.0.0.1:` + strconv.Itoa(mappedPort.Int()) + `"
+				);
+			} catch (err) {
+				if (err.name !== "NonExistingDomain") {
+					throw "Resolving missing.domain against unbound server test container returned unexpected error, expected NonExistingDomain, got: " + err.Name
+				}
 		
-			if (resolvedResults.length !== 0) {
-				throw "Resolving missing.domain against unbound server test container returned unexpected results, expected 0 ips, got:" + resolvedResults.length
+				// We expected this error, so we can return
+				return
 			}
+		
+			throw "Resolving missing.domain against unbound server test container should have thrown an error, but it didn't"
 		`
 
 		_, err = runtime.RunOnEventLoop(wrapInAsyncLambda(testScript))

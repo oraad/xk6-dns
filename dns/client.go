@@ -57,7 +57,11 @@ func (r *Client) Resolve(
 ) ([]string, error) {
 	concreteType, err := RecordTypeString(recordType)
 	if err != nil {
-		return nil, fmt.Errorf("invalid record type: %w", err)
+		return nil, fmt.Errorf(
+			"resolve operation failed with %w, %s is an invalid DNS record type",
+			UnsupportedRecordTypeError,
+			recordType,
+		)
 	}
 
 	// Prepare the DNS query message
@@ -72,7 +76,11 @@ func (r *Client) Resolve(
 	// Query the nameserver
 	response, _, err := r.client.ExchangeContext(ctx, &message, nameserver.Addr())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("querying the dns nameserver failed: %w", err)
+	}
+
+	if response.Rcode != dns.RcodeSuccess {
+		return nil, newDNSError(response.Rcode, "DNS query failed")
 	}
 
 	var ips []string
@@ -83,7 +91,11 @@ func (r *Client) Resolve(
 		case *dns.AAAA:
 			ips = append(ips, t.AAAA.String())
 		default:
-			return nil, fmt.Errorf("unhandled DNS answer type %T", a)
+			return nil, fmt.Errorf(
+				"resolve operation failed with %w: unhandled DNS answer type %T",
+				UnsupportedRecordTypeError,
+				a,
+			)
 		}
 	}
 
@@ -95,7 +107,7 @@ func (r *Client) Resolve(
 func (r *Client) Lookup(ctx context.Context, hostname string) ([]string, error) {
 	ips, err := net.DefaultResolver.LookupHost(ctx, hostname)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("lookup of %s failed: %w", hostname, err)
 	}
 
 	return ips, nil
