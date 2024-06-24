@@ -25,7 +25,7 @@ func (n Nameserver) Addr() string {
 //
 // It expects the `addr` to be in the format `ip` or `ip[:port]`. Where `ip` can be an IPv4 or an IPv6 address.
 func parseNameserverAddr(addr string) (Nameserver, error) {
-	hostStr, portStr, err := parseHostAndPort(addr)
+	hostStr, port, err := parseHostAndPort(addr)
 	if err != nil {
 		return Nameserver{}, err
 	}
@@ -36,50 +36,47 @@ func parseNameserverAddr(addr string) (Nameserver, error) {
 		return Nameserver{}, fmt.Errorf("invalid nameserver IP address: %s", hostStr)
 	}
 
-	if portStr == "" {
-		portStr = "53"
-	}
-
-	// Convert the port to an integer
-	port, err := strconv.Atoi(portStr)
-	if err != nil {
-		return Nameserver{}, fmt.Errorf("nameserver port is not a number: %w", err)
-	}
-
-	if port < 0 || port > 65535 {
-		return Nameserver{}, fmt.Errorf("nameserver port out of range: %d", port)
-	}
-
-	return Nameserver{ip, uint16(port)}, nil
+	return Nameserver{ip, port}, nil
 }
 
-func parseHostAndPort(addr string) (string, string, error) {
+func parseHostAndPort(addr string) (string, uint16, error) {
 	var err error
 	var host string
-	port := "53"
+	var defaultDNSPort uint16 = 53
 
-	// Check if the address contains a port
-	if strings.ContainsRune(addr, ':') {
-		// Split the host and the port from the address string
-		host, port, err = net.SplitHostPort(addr)
-		if err == nil {
-			return host, port, nil
+	// IPv6 addresses can contain colons, so we need to check if the error is due to an IPv6 address
+	// without a port, or if it's an actual error.
+	if strings.Contains(addr, "]") {
+		// Try to trim the brackets from the IPv6 address and parse it without the port
+		if addr[0] == '[' && addr[len(addr)-1] == ']' {
+			host = addr[1 : len(addr)-1]
+			return host, defaultDNSPort, nil
 		}
-
-		// IPv6 addresses can contain colons, so we need to check if the error is due to an IPv6 address
-		// without a port, or if it's an actual error.
-		if strings.Contains(addr, "]") {
-			// Try to trim the brackets from the IPv6 address and parse it without the port
-			if addr[0] == '[' && addr[len(addr)-1] == ']' {
-				host = addr[1 : len(addr)-1]
-				return host, port, nil
-			}
-		}
-
-		return "", "", fmt.Errorf("invalid nameserver address format: %w", err)
 	}
 
-	host = addr
+	if !strings.Contains(addr, ":") {
+		return addr, defaultDNSPort, nil
+	}
 
-	return host, port, nil
+	// Check if the address contains a port
+	// if strings.ContainsRune(addr, ':') {
+	// Split the host and the port from the address string
+	host, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		return "", 0, fmt.Errorf("invalid nameserver address format: %w", err)
+	}
+
+	// SplitHostPort doesn't do any sort of validation on the host and port, and will
+	// accept any valid string as a port. Thus we verify its a number ourselves.
+	portInt, portErr := strconv.Atoi(port)
+	if portErr != nil {
+		return "", 0, fmt.Errorf("nameserver port not a number %s: %w", port, portErr)
+	}
+
+	// Check if the port is within the valid port range
+	if portInt < 0 || portInt > 65535 {
+		return "", 0, fmt.Errorf("nameserver port out of range %d", portInt)
+	}
+
+	return host, uint16(portInt), nil
 }
