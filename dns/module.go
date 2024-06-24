@@ -69,6 +69,11 @@ func (mi *ModuleInstance) Resolve(query, recordType, nameserverAddr sobek.Value)
 		return promise
 	}
 
+	if nameserverAddr == nil {
+		reject(errors.New("nameserver argument must be provided"))
+		return promise
+	}
+
 	var queryStr string
 	if err := mi.vu.Runtime().ExportTo(query, &queryStr); err != nil {
 		reject(fmt.Errorf("query must be a string; got %v instead", query))
