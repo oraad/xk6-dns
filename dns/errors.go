@@ -37,7 +37,7 @@ func newDNSError(rcode int, message string) *Error {
 
 // Error returns the error message.
 func (e *Error) Error() string {
-	return e.Message
+	return e.Kind.String() + ": " + e.Message
 }
 
 // errorKind represents a DNS error kind, based on DNS Response Codes.
