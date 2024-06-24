@@ -7,7 +7,7 @@ import (
 )
 
 // Register the extension on module initialization, available to
-// import from JS as "k6/x/webcrypto".
+// import from JS as "k6/x/dns".
 func init() {
 	modules.Register("k6/x/dns", new(dns.RootModule))
 }

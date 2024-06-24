@@ -61,7 +61,6 @@ func (mi *ModuleInstance) Exports() modules.Exports {
 }
 
 // Resolve resolves a domain name to an IP address.
-// func (mi *ModuleInstance) Resolve(query, recordType sobek.Value, resolveDNSOptions *sobek.Object) *sobek.Promise {
 func (mi *ModuleInstance) Resolve(query, recordType, nameserverAddr sobek.Value) *sobek.Promise {
 	promise, resolve, reject := promises.New(mi.vu)
 
@@ -88,7 +87,6 @@ func (mi *ModuleInstance) Resolve(query, recordType, nameserverAddr sobek.Value)
 		return promise
 	}
 
-	// nameserver := NewNameserver(options.Nameserver.IP, options.Nameserver.Port)
 	nameserver, err := ParseNameserverAddr(nameserverAddrStr)
 	if err != nil {
 		reject(fmt.Errorf("parsing nameserver address failed: %w", err))
@@ -138,7 +136,7 @@ func (mi *ModuleInstance) Lookup(hostname sobek.Value) *sobek.Promise {
 
 	var hostnameStr string
 	if err := mi.vu.Runtime().ExportTo(hostname, &hostnameStr); err != nil {
-		reject(fmt.Errorf("hostname must be a string; got %v instead", hostname))
+		reject(fmt.Errorf("hostname must be a string; got %T instead", hostname))
 		return promise
 	}
 

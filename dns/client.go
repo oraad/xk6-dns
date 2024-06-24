@@ -76,7 +76,7 @@ func (r *Client) Resolve(
 	// Query the nameserver
 	response, _, err := r.client.ExchangeContext(ctx, &message, nameserver.Addr())
 	if err != nil {
-		return nil, fmt.Errorf("querying the dns nameserver failed: %w", err)
+		return nil, fmt.Errorf("querying the DNS nameserver failed: %w", err)
 	}
 
 	if response.Rcode != dns.RcodeSuccess {
