@@ -89,7 +89,7 @@ func Test_parseNameserverAddr(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			gotNameserver, err := ParseNameserverAddr(tt.addr)
+			gotNameserver, err := parseNameserverAddr(tt.addr)
 			if !tt.wantErr(t, err, fmt.Sprintf("parseNameserverAddr(%v)", tt.addr)) {
 				return
 			}

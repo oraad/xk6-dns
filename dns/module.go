@@ -87,7 +87,7 @@ func (mi *ModuleInstance) Resolve(query, recordType, nameserverAddr sobek.Value)
 		return promise
 	}
 
-	nameserver, err := ParseNameserverAddr(nameserverAddrStr)
+	nameserver, err := parseNameserverAddr(nameserverAddrStr)
 	if err != nil {
 		reject(fmt.Errorf("parsing nameserver address failed: %w", err))
 		return promise
