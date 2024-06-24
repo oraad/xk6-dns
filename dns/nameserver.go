@@ -59,7 +59,6 @@ func parseHostAndPort(addr string) (string, uint16, error) {
 	}
 
 	// Check if the address contains a port
-	// if strings.ContainsRune(addr, ':') {
 	// Split the host and the port from the address string
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
