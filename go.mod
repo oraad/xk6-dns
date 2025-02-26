@@ -1,4 +1,4 @@
-module github.com/grafana/xk6-dns
+module github.com/oraad/xk6-dns
 
 go 1.21
 
