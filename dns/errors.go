@@ -43,7 +43,7 @@ func (e *Error) Error() string {
 // errorKind represents a DNS error kind, based on DNS Response Codes.
 //
 //go:generate enumer -type=errorKind -output errors_gen.go
-type errorKind uint8
+type errorKind int
 
 // DNS error kinds based on DNS Response Codes, see https://www.iana.org/assignments/dns-parameters/dns-parameters.xhtml
 const (
