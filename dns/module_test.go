@@ -61,7 +61,7 @@ const (
 	// primaryTestNAPTR.
 	testNAPTRDomain = "9.8.7.6.5.4.3.2.1.0.e164.arpa."
 
-	//primaryTestNAPTR is a default NAPTR response we configure our DNS ser ver to resolve the testNAPTRDomain to.
+	// primaryTestNAPTR is a default NAPTR response we configure our DNS ser ver to resolve the testNAPTRDomain to.
 	primaryTestNAPTR = "100 10 \"U\" \"E2U+sip\" \"!^.*$!sip:customer-service@example.com!\" ."
 )
 
