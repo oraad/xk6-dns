@@ -21,7 +21,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"go.k6.io/k6/js/compiler"
 	"go.k6.io/k6/js/modulestest"
 )
 
@@ -453,7 +452,7 @@ func newConfiguredRuntime(t testing.TB) (*modulestest.Runtime, error) {
 	err := runtime.SetupModuleSystem(
 		map[string]interface{}{"k6/x/dns": New()},
 		nil,
-		compiler.New(runtime.VU.InitEnv().Logger),
+		nil,
 	)
 	if err != nil {
 		return nil, err
